@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deck Consultant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom scrollbar to match Silverback vibe */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #888; border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen flex flex-col font-sans">
+
+    <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div class="flex justify-start">
+            <div class="bg-gray-200 p-3 rounded-lg max-w-xs">
+                Hello! I'm the Silverback Deck Consultant. What kind of deck are you dreaming of?
+            </div>
+        </div>
+    </div>
+
+    <div id="image-area" class="hidden p-4 bg-gray-100 border-t border-gray-300">
+        <h3 class="text-sm font-bold text-gray-500 mb-2">PREVIEW</h3>
+        <img id="deck-preview" class="w-full rounded-lg shadow-lg" src="" />
+    </div>
+
+    <div class="p-4 bg-white border-t flex gap-2">
+        <input type="text" id="user-input" 
+            class="flex-1 border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Describe your deck...">
+        <button onclick="sendMessage()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Send</button>
+        <button onclick="generateImage()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">🎨 Visualize</button>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        let history = []; // Keep track of conversation for context
+
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value;
+            if (!message) return;
+
+            // 1. Add User Message to UI
+            chatBox.innerHTML += `<div class="flex justify-end"><div class="bg-blue-600 text-white p-3 rounded-lg max-w-xs">${message}</div></div>`;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // 2. Call Python Backend
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ message: message, history: history })
+            });
+            const data = await res.json();
+
+            // 3. Add AI Response to UI
+            chatBox.innerHTML += `<div class="flex justify-start"><div class="bg-gray-200 text-gray-800 p-3 rounded-lg max-w-xs">${data.reply}</div></div>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Update history
+            history.push({role: "user", content: message});
+            history.push({role: "assistant", content: data.reply});
+        }
+
+        async function generateImage() {
+            // Use the last user message as the prompt
+            const lastMsg = history.reverse().find(m => m.role === 'user')?.content || "Modern composite deck";
+            
+            const btn = document.querySelector('button[onclick="generateImage()"]');
+            btn.innerHTML = "Generating...";
+            btn.disabled = true;
+
+            const res = await fetch('/api/visualize', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ prompt: lastMsg })
+            });
+            const data = await res.json();
+
+            if(data.image_data) {
+                document.getElementById('image-area').classList.remove('hidden');
+                document.getElementById('deck-preview').src = data.image_data;
+            }
+            btn.innerHTML = "🎨 Visualize";
+            btn.disabled = false;
+        }
+    </script>
+</body>
+</html>
