@@ -1,0 +1,12 @@
+# Security (DO NOT UPLOAD THESE)
+.env
+
+# Python junk
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# IDE junk (Optional, but keeps repo clean)
+.idea/
+.vscode/
