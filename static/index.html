@@ -36,20 +36,6 @@
         </div>
     </div>
 
-    <div id="image-area" class="hidden p-4 bg-gray-100 border-t border-gray-200 shadow-inner">
-        <div class="flex justify-between items-center mb-2">
-            <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wide">Visual Preview</h3>
-            <button onclick="closeImage()" class="text-gray-400 hover:text-red-500 text-lg font-bold">&times;</button>
-        </div>
-        <div class="relative rounded-lg overflow-hidden shadow-lg border border-gray-300 bg-white min-h-[200px] flex items-center justify-center">
-             <img id="deck-preview" class="w-full object-cover fade-in" src="" alt="Deck Design" />
-             <div id="image-loader" class="absolute inset-0 bg-white/80 z-10 flex flex-col items-center justify-center hidden">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 mb-2" style="border-color: #f48200;"></div>
-                <span class="text-xs font-semibold animate-pulse" style="color: #f48200;">Rendering Design...</span>
-             </div>
-        </div>
-    </div>
-
     <div class="p-4 bg-white border-t flex gap-2 items-center">
         <input type="text" id="user-input" 
             class="flex-1 bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:outline-none focus:ring-2 block p-2.5 transition-all"
@@ -58,24 +44,15 @@
             onkeydown="if(event.key === 'Enter') sendMessage()">
         
         <button onclick="sendMessage()" id="send-btn" 
-            class="text-white font-medium rounded-lg text-sm px-4 py-2.5 transition-colors hover:brightness-90"
+            class="text-white font-medium rounded-lg text-sm px-6 py-2.5 transition-colors hover:brightness-90"
             style="background-color: #f48200;">
             Send
-        </button>
-        
-        <button onclick="generateImage()" id="visualize-btn"
-            class="text-white font-medium rounded-lg text-sm px-4 py-2.5 transition-colors flex items-center gap-2 hover:brightness-90"
-            style="background-color: #e95805;">
-            <span>🎨</span> <span class="hidden sm:inline">Visualize</span>
         </button>
     </div>
 
     <script>
         const chatBox = document.getElementById('chat-box');
         const userInput = document.getElementById('user-input');
-        const imageArea = document.getElementById('image-area');
-        const imageLoader = document.getElementById('image-loader');
-        const deckPreview = document.getElementById('deck-preview');
         
         let history = []; 
 
@@ -158,48 +135,6 @@
                 appendMessage('assistant', "⚠️ Sorry, I'm having trouble connecting to the brain. Please try again.");
                 console.error(error);
             }
-        }
-
-        async function generateImage() {
-            // Get prompt from last user message
-            const lastMsg = history.reverse().find(m => m.role === 'user')?.content;
-            if(!lastMsg) {
-                alert("Please describe a deck in the chat first!");
-                return;
-            }
-
-            // UI State: Loading
-            imageArea.classList.remove('hidden');
-            imageLoader.classList.remove('hidden');
-            deckPreview.classList.add('hidden'); // Hide old image if any
-            
-            // Scroll to bottom so they see the area open
-            setTimeout(() => chatBox.scrollTop = chatBox.scrollHeight, 100);
-
-            try {
-                const res = await fetch('/api/visualize', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ prompt: lastMsg })
-                });
-
-                const data = await res.json();
-
-                if(data.image_data) {
-                    deckPreview.src = data.image_data;
-                    deckPreview.classList.remove('hidden');
-                    // Scroll again to ensure image is seen
-                    chatBox.scrollTop = chatBox.scrollHeight;
-                }
-            } catch (error) {
-                alert("Failed to generate image. Please try again.");
-            } finally {
-                imageLoader.classList.add('hidden');
-            }
-        }
-
-        function closeImage() {
-            imageArea.classList.add('hidden');
         }
     </script>
 </body>
